@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx ts-node index.ts",
+    "start": "npx ts-node cli.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,9 +16,14 @@
   "devDependencies": {
     "@aws-sdk/client-api-gateway": "^3.682.0",
     "@aws-sdk/client-s3": "^3.686.0",
+    "@aws-sdk/client-ses": "^3.686.0",
     "@aws-sdk/client-ssm": "^3.682.0",
     "@aws-sdk/lib-storage": "^3.686.0",
+    "@aws-sdk/s3-request-presigner": "^3.686.0",
+    "@types/aws-lambda": "^8.10.145",
     "@types/node": "^22.9.0",
+    "@types/nodemailer": "^6.4.16",
+    "dotenv": "^16.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
   },
@@ -28,6 +33,7 @@
     "cmd-ts": "^0.13.0",
     "csv-stringify": "^6.5.1",
     "csv-writer": "^1.6.0",
+    "pino": "^9.5.0",
     "streaming-iterables": "^8.0.1"
   }
 }

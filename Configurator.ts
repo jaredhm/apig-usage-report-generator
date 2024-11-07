@@ -4,24 +4,31 @@ import {
   SSMClient
 } from '@aws-sdk/client-ssm';
 
-type PartialRecord<K extends string, T> = {
-  [P in K]?: T;
-};
-
 export enum ConfigKeys {
   OutputS3Bucket = "OUTPUT_S3_BUCKET",
   OutputS3Folder = "OUTPUT_S3_FOLDER",
+  SenderAddress = "SENDER_ADDRESS",
+  RecipientAddress = "RECIPIENT_ADDRESS",
   UsagePlanId = "USAGE_PLAN_ID",
   ReportIntervalDays = "REPORT_INTERVAL_DAYS",
 }
 
+type ConfigTypes = {
+  [ConfigKeys.OutputS3Bucket]: string,
+  [ConfigKeys.OutputS3Folder]: string,
+  [ConfigKeys.SenderAddress]: string,
+  [ConfigKeys.RecipientAddress]: string,
+  [ConfigKeys.UsagePlanId]: string,
+  [ConfigKeys.ReportIntervalDays]: number
+}
+
 abstract class ConfigProvider {
   private booted = false;
-  protected values: PartialRecord<ConfigKeys, string> = {};
+  protected values: {[K in ConfigKeys]?: ConfigTypes[K]} = {};
 
   constructor() {}
 
-  tryGet(key: ConfigKeys): string | null {
+  tryGet<T extends ConfigKeys>(key: T): ConfigTypes[T] | null {
     return this.values[key] ?? null;
   }
   get isBooted() {
@@ -38,7 +45,14 @@ abstract class ConfigProvider {
 export class EnvironmentConfigProvider extends ConfigProvider {
   async _bootInner(): Promise<void> {
     for (const key of Object.values(ConfigKeys)) {
-      this.values[key] = process.env[key];
+      const value = process.env[key];
+      if (value) {
+        if (key === ConfigKeys.ReportIntervalDays) {
+          this.values[key] = parseInt(value);
+        } else {
+          this.values[key] = value;
+        }
+      }
     }
   }
 }
@@ -46,15 +60,12 @@ export class EnvironmentConfigProvider extends ConfigProvider {
 export class ParameterStoreConfigProvider extends ConfigProvider {
   private ssmClient = new SSMClient({});
 
+  constructor(private parameterStoreNamespace: string) { super() }
+
   async _bootInner(): Promise<void> {
-    const parameterStoreNamespace = process.env["PARAMETER_STORE_NAMESPACE"];
-    assert(
-      typeof parameterStoreNamespace === 'string',
-      "Expected PARAMETER_STORE_NAMESPACE in environment"
-    );
     const getParametersByPathResult = await this.ssmClient.send(
       new GetParametersByPathCommand({
-        Path: parameterStoreNamespace,
+        Path: this.parameterStoreNamespace,
         WithDecryption: true,
       })
     );
@@ -62,8 +73,12 @@ export class ParameterStoreConfigProvider extends ConfigProvider {
       const param = getParametersByPathResult.Parameters?.find(
         ({ Name }) => Name?.toLowerCase() === key.toLowerCase()
       );
-      if (param) {
-        this.values[key] = param.Value;
+      if (param?.Value) {
+        if (key === ConfigKeys.ReportIntervalDays) {
+          this.values[key] = parseInt(param.Value);
+        } else {
+          this.values[key] = param.Value;
+        }
       }
     }
   }
@@ -72,7 +87,7 @@ export class ParameterStoreConfigProvider extends ConfigProvider {
 export class Configurator {
   constructor(private providers: Array<ConfigProvider> = [new EnvironmentConfigProvider()]) {}
 
-  async tryGet(key: ConfigKeys): Promise<string | null> {
+  async tryGet<T extends ConfigKeys>(key: T): Promise<ConfigTypes[T] | null> {
     await this.boot();
     for (const provider of this.providers) {
       const value = provider.tryGet(key);
@@ -83,7 +98,7 @@ export class Configurator {
     return null;
   }
 
-  async get(key: ConfigKeys): Promise<string> {
+  async get<T extends ConfigKeys>(key: T): Promise<ConfigTypes[T]> {
     const value = await this.tryGet(key);
     assert(
       value,
