@@ -1,0 +1,33 @@
+{
+  "name": "licensing-usage-reports",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "volta": {
+    "node": "20.18.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-api-gateway": "^3.682.0",
+    "@aws-sdk/client-s3": "^3.686.0",
+    "@aws-sdk/client-ssm": "^3.682.0",
+    "@aws-sdk/lib-storage": "^3.686.0",
+    "@types/node": "^22.9.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@js-joda/core": "^5.6.3",
+    "assert": "^2.1.0",
+    "cmd-ts": "^0.13.0",
+    "csv-stringify": "^6.5.1",
+    "csv-writer": "^1.6.0",
+    "streaming-iterables": "^8.0.1"
+  }
+}
